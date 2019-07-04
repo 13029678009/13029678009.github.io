@@ -1,0 +1,17 @@
+body,
+html {
+  line-height: 1;
+  font-family: 'PingFang SC', 'STHeitiSC-Light', 'Helvetica-Light', arial, sans-serif, 'Droid Sans Fallback';
+  -webkit-tap-highlight-color: transparent;
+  color: #fff;
+}
+body a,
+html a,
+body a:hover,
+html a:hover,
+body a:link,
+html a:link,
+body a:active,
+html a:active {
+  text-decoration: none;
+}

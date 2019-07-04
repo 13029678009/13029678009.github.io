@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  
+  <title>webpack-性能优化 | blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="``` bashwebpack性能优化分为两方面，一方面是development模式下提高开发环境的构建速度，让你的改动快速的更新到浏览器供调试，另一方面是production模式下提高生产环境的bundle代码质量，减少体积，优化代码的运行时性能。 anyway，我认为在条件允许的情况下，首要优化方案都是升级到最新版webpack，毕竟其他措施都是辅助，webpack核心代码的优化才是主力，we">
+<meta name="keywords" content="vue,webpack">
+<meta property="og:type" content="article">
+<meta property="og:title" content="webpack-性能优化">
+<meta property="og:url" content="http://yoursite.com/2019/06/16/react和redux生态源码解析/index.html">
+<meta property="og:site_name" content="blog">
+<meta property="og:description" content="``` bashwebpack性能优化分为两方面，一方面是development模式下提高开发环境的构建速度，让你的改动快速的更新到浏览器供调试，另一方面是production模式下提高生产环境的bundle代码质量，减少体积，优化代码的运行时性能。 anyway，我认为在条件允许的情况下，首要优化方案都是升级到最新版webpack，毕竟其他措施都是辅助，webpack核心代码的优化才是主力，we">
+<meta property="og:locale" content="default">
+<meta property="og:updated_time" content="2019-06-17T09:09:11.899Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="webpack-性能优化">
+<meta name="twitter:description" content="``` bashwebpack性能优化分为两方面，一方面是development模式下提高开发环境的构建速度，让你的改动快速的更新到浏览器供调试，另一方面是production模式下提高生产环境的bundle代码质量，减少体积，优化代码的运行时性能。 anyway，我认为在条件允许的情况下，首要优化方案都是升级到最新版webpack，毕竟其他措施都是辅助，webpack核心代码的优化才是主力，we">
+  
+  <link rel="alternate" href="/atom.xml" title="blog" type="application/atom+xml">
+  
+  
+  <link rel="icon" href="/favicon.png">
+  <link href="https://cdn.bootcss.com/animate.css/3.7.2/animate.css" rel="stylesheet">
+  
+  <link rel="stylesheet" href="https://cdn.bootcss.com/twitter-bootstrap/3.0.0/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/common/fonts/font-awesome-4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/libs/aplayer/APlayer.min.css">
+  <script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+  <script src="/libs/highlight/highlight.pack.js"></script>
+  <script src="/libs/aplayer/APlayer.min.js"></script>
+  <script src="/js/script.js"></script>
+  <script>
+    $(function () {
+      hljs.initHighlightingOnLoad();
+      const ap8 = new APlayer({
+        element: document.getElementById('player_box'),
+        mutex: false,
+        theme: '#01e5ff',
+        order: 'random',
+        lrcType: 3,
+        fixed: true,
+      });
+      $.ajax({
+        url: 'https://api.i-meto.com/meting/api?server=netease&type=playlist&id=35798529',
+        success: function (list) {
+          ap8.list.add(JSON.parse(list));
+        }
+      });
+    }) 
+  </script>
+</head></html>
+<body>
+	<div class="nav">
+  <button class="navbar" id="main-nav-toggle">
+    <span class="fa fa-navicon"></span>
+  </button>
+  <ul class="list clearfix">
+    
+    <li class="item"><a href="/">Home</a></li>
+    
+    <li class="item"><a href="/archives">Archives</a></li>
+    
+    <li class="item"><a href="/about">About</a></li>
+    
+    <li class="item"><a href="/tagcloud">Tagcloud</a></li>
+    
+  </ul></div>
+	<div class="container">
+  <div class="row">
+    <div class="col-md-9">
+      <article id="post-react和redux生态源码解析" class="article article-type-post" itemprop="blogPost">
+        <header class="article-header">
+          
+  
+    <h3 class="article-title" itemprop="name">
+      webpack-性能优化
+    </h3>
+  
+
+          <div class="article-meta">
+            <a href="/2019/06/16/react和redux生态源码解析/" class="article-date">
+  <time datetime="2019-06-15T17:21:44.149Z" itemprop="datePublished">
+    
+    Jun 16, 2019 1:21 AM
+    
+  </time>
+</a>
+            
+          </div>
+        </header>
+        <div class="article-content">
+          
+          
+         
+          
+          <div class="article-entry" itemprop="articleBody">
+            
+            <p>``` bashwebpack性能优化分为两方面，一方面是development模式下提高开发环境的构建速度，让你的改动快速的更新到浏览器供调试，另一方面是production模式下提高生产环境的bundle代码质量，减少体积，优化代码的运行时性能。</p>
+<p>anyway，我认为在条件允许的情况下，首要优化方案都是升级到最新版webpack，毕竟其他措施都是辅助，webpack核心代码的优化才是主力，webpack1的速度和4的是不能比的。</p>
+<p>然后webpack4提供了两种mode供配置，每种mode都有一套性能较佳的默认配置，省去了我们很多人工配置的注意点。</p>
+<p>优化development模式构建性能<br>选择合适的source-map，development用cheap-module-source-map。source-map因为其体积大信息多构建慢，真的是最能影响构建速度的一个方面了。在符合需要的情况下选择一个尽量简单的譬如不包含列信息sourcemap，性能提升看得见。<br>拆项目，减少构建范围。再怎么优化也扛不住几年时间码起来的巨大的项目，不如拆成几个独立的部分单独构建。<br>配置external，不打包react\react-dom\vue这些，直接引用cdn资源。这些资源变更少体积大，根本无需实时参与构建，拆出去，构建压力小不少</p>
+<p> ###webpack-性能优化<br>19 March 2019<br>webpack性能优化分为两方面，一方面是development模式下提高开发环境的构建速度，让你的改动快速的更新到浏览器供调试，另一方面是production模式下提高生产环境的bundle代码质量，减少体积，优化代码的运行时性能。</p>
+<p>anyway，我认为在条件允许的情况下，首要优化方案都是升级到最新版webpack，毕竟其他措施都是辅助，webpack核心代码的优化才是主力，webpack1的速度和4的是不能比的。</p>
+<p>然后webpack4提供了两种mode供配置，每种mode都有一套性能较佳的默认配置，省去了我们很多人工配置的注意点。</p>
+<p>优化development模式构建性能<br>选择合适的source-map，development用cheap-module-source-map。source-map因为其体积大信息多构建慢，真的是最能影响构建速度的一个方面了。在符合需要的情况下选择一个尽量简单的譬如不包含列信息sourcemap，性能提升看得见。<br>拆项目，减少构建范围。再怎么优化也扛不住几年时间码起来的巨大的项目，不如拆成几个独立的部分单独构建。<br>配置external，不打包react\react-dom\vue这些，直接引用cdn资源。这些资源变更少体积大，根本无需实时参与构建，拆出去，构建压力小不少<br>使用happypack， 让loader可以多进程去处理文件。webpack4对uglifyjs插件都有了多进程支持，但是官方对loader还没有支持多进程,目前happypack仍是一个好选择<br>开启uglifyjs并行压缩（其实默认就是开启的）： minimizer: [ new UglifyJsPlugin({ parallel: true }) ]</p>
+<p>配置resolve.modules指定模块获取范围，减少loader的处理查找范围<br>精确的resolve.extensions，作用同上<br>配置DLLPlugin:这个的作用和配置external是异曲同工，通过单独的webpack配置文件指定哪些公用基础库生成dll，譬如vue/vuex/vue-router，通过配置new webpack.DllPlugin(options)生成dll的js bundle和dll的manifest.json，manifest.json记录的是这些生成dll模块的map映射表，供后面项目模块import和require引用时查找。然后再在项目的webpack中使用new webpack.DllReferencePlugin({ manifest: require(“path/dll.manifest.json”)})来引入dll文件关系供使用。dllPlugin相对external的好处是更加动态化，如果你某一天真的需要升级其中一个npm包了结合add-asset-html-webpack-plugin资源重新打包和路径替换都可以自动处理，而external的资源只能手动处理更新了，不过dllPlugin的配置使用姿<br>© 2019 echizen<br>``</p>
+
+            
+          </div>
+          <div class="article-footer">
+           
+            
+            
+            
+
+<ul class="article-tag-list">
+  
+  <li class="article-tag-item"><i class="glyphicon glyphicon-tags"></i><a class="article-tag-link " href="/tags/vue/">vue<span class="article-tag-count">1</span></a></li>
+  
+  <li class="article-tag-item"><i class="glyphicon glyphicon-tags"></i><a class="article-tag-link " href="/tags/webpack/">webpack<span class="article-tag-count">1</span></a></li>
+  
+</ul>
+
+
+
+
+            <div class="share-wrap">
+               <a data-url="http://yoursite.com/2019/06/16/react和redux生态源码解析/" data-id="cjxlix8ez0003r4u994qk1fya" class="article-share-link"><i class="glyphicon glyphicon-share-alt"></i></a>
+            </div>
+           
+          </div>
+        </div>
+        
+        
+<nav id="article-nav" class="article-nav">
+  
+  <a href="/2019/06/18/test/" id="article-nav-newer" class="article-nav-link-wrap">
+    <span class="article-nav-title" title="test">
+      
+      上一页
+      
+    </span>
+  </a>
+  
+  
+  <a href="/2019/06/15/Markdown基本语法/" id="article-nav-older" class="article-nav-link-wrap">
+    <span class="article-nav-title" title="Markdown 基本语法">下一页</span>
+  </a>
+  
+</nav>
+
+
+        
+      </article>
+    </div>
+  </div>
+</div>
+
+
+
+<div class="article-bg"></div>
+    <div id="mobile-nav" class="mobile-nav">
+  <div class="avatar-wrap">
+<div class="avatar">
+  <img width="60" src="https://ss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=2571275722,2792732303&fm=26&gp=0.jpg" alt>
+</div>
+<span class="name">旧人阡陌</span>
+  </div>
+  <ul class="menu">
+    
+    <li class="menu-item">
+      <a href="/" class="mobile-nav-link">Home</a>
+    </li>
+    
+    <li class="menu-item">
+      <a href="/archives" class="mobile-nav-link">Archives</a>
+    </li>
+    
+    <li class="menu-item">
+      <a href="/about" class="mobile-nav-link">About</a>
+    </li>
+    
+    <li class="menu-item">
+      <a href="/tagcloud" class="mobile-nav-link">Tagcloud</a>
+    </li>
+    
+  </ul>
+</div>
+<div class="shape" id="navShape"></div>
+
+</body>
+</html>
