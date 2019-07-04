@@ -3,7 +3,7 @@ html {
   line-height: 1;
   font-family: 'PingFang SC', 'STHeitiSC-Light', 'Helvetica-Light', arial, sans-serif, 'Droid Sans Fallback';
   -webkit-tap-highlight-color: transparent;
-  color: #fff;
+  color: $color-text;
 }
 body a,
 html a,
@@ -14,4 +14,16 @@ html a:link,
 body a:active,
 html a:active {
   text-decoration: none;
+}
+body a,
+html a {
+  color: #6ff;
+  transition: color 0.1s;
+}
+body a:hover,
+html a:hover {
+  color: #3cf;
+}
+.page-header {
+  border-bottom: 1px solid #666;
 }
